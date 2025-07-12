@@ -8,6 +8,8 @@ import {
   ArrowUpDown,
   Share2,
   Check,
+  Filter,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +45,7 @@ function CivicDataSpaceContent() {
   // UI state
   const [viewMode, setViewMode] = useState<ViewMode>(urlState.viewMode);
   const [copied, setCopied] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Filter/search/sort state
   const [search, setSearch] = useState(urlState.search);
@@ -245,12 +248,15 @@ function CivicDataSpaceContent() {
 
       <div className="container mx-auto px-4 py-6">
         <div className="flex gap-6">
-          <FilterSidebar
-            data={data}
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            onReset={handleResetFilters}
-          />
+          {/* Desktop Filter Sidebar - hidden on mobile */}
+          <div className="hidden lg:block">
+            <FilterSidebar
+              data={data}
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onReset={handleResetFilters}
+            />
+          </div>
           {/* Main Content */}
           <div className="flex-1">
             {/* Active Filters Indicator */}
@@ -298,7 +304,7 @@ function CivicDataSpaceContent() {
             )}
 
             {/* Search and Controls */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
               <div className="flex-1 max-w-xl">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -310,7 +316,7 @@ function CivicDataSpaceContent() {
                   />
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center justify-between lg:justify-end gap-4">
                 <div className="flex items-center space-x-2">
                   <Button
                     variant={viewMode === "grid" ? "default" : "ghost"}
@@ -339,7 +345,7 @@ function CivicDataSpaceContent() {
                     onValueChange={handleSortFieldChange}
                     defaultValue={Sort.Recent}
                   >
-                    <SelectTrigger className="w-40">
+                    <SelectTrigger className="w-32 lg:w-40">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -423,7 +429,7 @@ function CivicDataSpaceContent() {
             )}
 
             {/* Pagination */}
-            <div className="flex items-center justify-between mt-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-8">
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-500">Items per page</span>
                 <Select
@@ -441,12 +447,12 @@ function CivicDataSpaceContent() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-500">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <span className="text-sm text-gray-500 text-center sm:text-left">
                   Page {page.toString().padStart(2, "0")} of{" "}
                   {totalPages.toString().padStart(2, "0")}
                 </span>
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center justify-center sm:justify-start space-x-1">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -487,6 +493,49 @@ function CivicDataSpaceContent() {
           </div>
         </div>
       </div>
+
+      {/* Mobile Filter Button - Fixed at bottom */}
+      <div className="lg:hidden fixed bottom-4 right-4 z-50">
+        <Button
+          onClick={() => setShowMobileFilters(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-14 h-14 shadow-lg"
+        >
+          <Filter className="w-6 h-6" />
+        </Button>
+      </div>
+
+      {/* Mobile Filter Modal */}
+      {showMobileFilters && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-50"
+          onClick={() => setShowMobileFilters(false)}
+        >
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-lg max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900">Filters</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowMobileFilters(false)}
+                className="p-2"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <div className="p-4">
+              <FilterSidebar
+                data={data}
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onReset={handleResetFilters}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

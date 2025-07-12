@@ -81,7 +81,7 @@ export default function FilterSidebar({
   };
 
   return (
-    <div className="w-64 flex-shrink-0">
+    <div className="w-full lg:w-64 lg:flex-shrink-0">
       <div className="bg-white border rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
