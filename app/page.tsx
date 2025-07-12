@@ -69,6 +69,35 @@ function CivicDataSpaceContent() {
   const hasActiveFilters =
     Object.values(filters).some((arr) => arr.length > 0) || search;
 
+  // Function to get limited active filters for display
+  const getLimitedActiveFilters = (maxItems: number = 3) => {
+    const activeFilters: string[] = [];
+
+    if (search) {
+      activeFilters.push(`Search: ${search}`);
+    }
+
+    Object.entries(filters).forEach(([key, values]) => {
+      if (values.length > 0) {
+        activeFilters.push(`${key}: ${values.join(", ")}`);
+      }
+    });
+
+    if (activeFilters.length <= maxItems) {
+      return {
+        filters: activeFilters,
+        hasMore: false,
+        totalCount: activeFilters.length,
+      };
+    }
+
+    return {
+      filters: activeFilters.slice(0, maxItems),
+      hasMore: true,
+      totalCount: activeFilters.length,
+    };
+  };
+
   // Update URL function
   const updateURLState = useCallback(
     (newState: Partial<URLState>) => {
@@ -263,39 +292,50 @@ function CivicDataSpaceContent() {
             {hasActiveFilters && (
               <div className="mb-4 p-2 bg-gray-100 border border-gray-200 rounded-sm">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-blue-800">
+                  <div className="flex items-center space-x-2 min-w-0 flex-1">
+                    <span className="text-sm font-medium text-blue-800 flex-shrink-0">
                       Active Filters:
                     </span>
-                    {search && (
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                        Search: {search}
-                      </span>
-                    )}
-                    {Object.entries(filters).map(
-                      ([key, values]) =>
-                        values.length > 0 && (
-                          <span
-                            key={key}
-                            className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"
-                          >
-                            {key}: {values.join(", ")}
-                          </span>
-                        )
-                    )}
+                    <div className="flex items-center space-x-1 overflow-hidden">
+                      {(() => {
+                        const {
+                          filters: displayFilters,
+                          hasMore,
+                          totalCount,
+                        } = getLimitedActiveFilters(2);
+                        return (
+                          <>
+                            {displayFilters.map((filter, index) => (
+                              <span
+                                key={index}
+                                className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded flex-shrink-0 max-w-[120px] sm:max-w-none truncate"
+                                title={filter}
+                              >
+                                {filter}
+                              </span>
+                            ))}
+                            {hasMore && (
+                              <span className="text-xs text-gray-500 flex-shrink-0">
+                                ...+{totalCount - 2} more
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleShareClick}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 flex-shrink-0 ml-2"
                   >
                     {copied ? (
                       <Check className="w-4 h-4" />
                     ) : (
                       <Share2 className="w-4 h-4" />
                     )}
-                    <span className="ml-1 text-xs">
+                    <span className="ml-1 text-xs hidden sm:inline">
                       {copied ? "Copied!" : "Share"}
                     </span>
                   </Button>
