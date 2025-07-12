@@ -2,15 +2,7 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { DatasetResponse } from "@/types/dataset";
-
-interface Filters {
-  sectors: string[];
-  timePeriods: string[];
-  dataTypes: string[];
-  tags: string[];
-  geography: string[];
-  licenses: string[];
-}
+import type { Filters } from "@/utils/urlFilters";
 
 interface FilterSidebarProps {
   data: DatasetResponse | null;
@@ -32,6 +24,12 @@ export default function FilterSidebar({
   const [tagsExpanded, setTagsExpanded] = useState(true);
   const [geographyExpanded, setGeographyExpanded] = useState(true);
   const [licensesExpanded, setLicensesExpanded] = useState(true);
+
+  // Calculate total active filters
+  const totalActiveFilters = Object.values(filters).reduce(
+    (sum, arr) => sum + arr.length,
+    0
+  );
 
   // Handler functions
   const handleSectorChange = (sector: string) => {
@@ -86,7 +84,14 @@ export default function FilterSidebar({
     <div className="w-64 flex-shrink-0">
       <div className="bg-white border rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900">FILTERS</h3>
+          <div className="flex items-center space-x-2">
+            <h3 className="font-semibold text-gray-900">FILTERS</h3>
+            {totalActiveFilters > 0 && (
+              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                {totalActiveFilters}
+              </span>
+            )}
+          </div>
           <button
             className="text-orange-500 text-sm hover:underline"
             onClick={onReset}

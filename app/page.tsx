@@ -1,19 +1,20 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, Grid3X3, List, ChevronDown, ArrowUpDown } from "lucide-react";
+import {
+  Search,
+  Grid3X3,
+  List,
+  ChevronDown,
+  ArrowUpDown,
+  Share2,
+  Copy,
+  Check,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { fetchDatasets } from "@/utils/api";
+import { useURLFilters, type Filters, type URLState } from "@/utils/urlFilters";
 import type { DatasetResponse } from "@/types/dataset";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -29,37 +30,50 @@ import {
 } from "@/components/ui/select";
 
 export default function CivicDataSpace() {
+  const { updateURL, getCurrentState } = useURLFilters();
+
+  // Get initial state from URL
+  const urlState = getCurrentState();
+
   // UI state
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [viewMode, setViewMode] = useState<"list" | "grid">(urlState.viewMode);
   const selectRef = useRef<HTMLButtonElement>(null);
+  const [copied, setCopied] = useState(false);
 
   // Filter/search/sort state
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  interface Filters {
-    sectors: string[];
-    timePeriods: string[];
-    dataTypes: string[];
-    tags: string[];
-    geography: string[];
-    licenses: string[];
-  }
-  const [filters, setFilters] = useState<Filters>({
-    sectors: [],
-    timePeriods: [],
-    dataTypes: [],
-    tags: [],
-    geography: [],
-    licenses: [],
-  });
-  const [sort, setSort] = useState("latest");
-  const [page, setPage] = useState(1);
-  const [size, setSize] = useState(5);
+  const [search, setSearch] = useState(urlState.search);
+  const [debouncedSearch, setDebouncedSearch] = useState(urlState.search);
+  const [filters, setFilters] = useState<Filters>(urlState.filters);
+  const [sort, setSort] = useState(urlState.sort);
+  const [page, setPage] = useState(urlState.page);
+  const [size, setSize] = useState(urlState.size);
 
   // Data state
   const [data, setData] = useState<DatasetResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Check if any filters are active
+  const hasActiveFilters =
+    Object.values(filters).some((arr) => arr.length > 0) || search;
+
+  // Update URL function
+  const updateURLState = useCallback(
+    (newState: Partial<URLState>) => {
+      const currentState = {
+        search: debouncedSearch,
+        filters,
+        sort,
+        page,
+        size,
+        viewMode,
+      };
+
+      const updatedState = { ...currentState, ...newState };
+      updateURL(updatedState);
+    },
+    [debouncedSearch, filters, sort, page, size, viewMode, updateURL]
+  );
 
   // Fetch datasets
   const getDatasets = useCallback(async () => {
@@ -87,6 +101,7 @@ export default function CivicDataSpace() {
       const res = await fetchDatasets(params);
       setData(res);
     } catch (err: any) {
+      setLoading(false);
       setError(err.message || "Error fetching datasets");
     } finally {
       setLoading(false);
@@ -119,37 +134,72 @@ export default function CivicDataSpace() {
   const handleFilterChange = (newFilters: Filters) => {
     setFilters(newFilters);
     setPage(1);
+    // Update URL immediately when filters change
+    updateURLState({ filters: newFilters, page: 1 });
   };
 
   const handleResetFilters = () => {
-    setFilters({
+    const resetFilters = {
       sectors: [],
       timePeriods: [],
       dataTypes: [],
       tags: [],
       geography: [],
       licenses: [],
-    });
+    };
+    setFilters(resetFilters);
     setPage(1);
+    // Update URL immediately when filters are reset
+    updateURLState({ filters: resetFilters, page: 1 });
   };
 
   const handleSortChange = (value: string) => {
     setSort(value);
     setPage(1);
+    // Update URL immediately when sort changes
+    updateURLState({ sort: value, page: 1 });
   };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+    // Update URL immediately when page changes
+    updateURLState({ page: newPage });
   };
 
   const handleSizeChange = (value: string) => {
-    setSize(Number(value));
+    const newSize = Number(value);
+    setSize(newSize);
     setPage(1);
+    // Update URL immediately when size changes
+    updateURLState({ size: newSize, page: 1 });
+  };
+
+  const handleViewModeChange = (mode: "list" | "grid") => {
+    setViewMode(mode);
+    // Update URL immediately when view mode changes
+    updateURLState({ viewMode: mode });
   };
 
   const handleArrowClick = () => {
     selectRef.current?.click();
   };
+
+  const handleShareClick = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy URL:", err);
+    }
+  };
+
+  // Update URL when debounced search changes (only after debounce)
+  useEffect(() => {
+    if (debouncedSearch !== urlState.search) {
+      updateURLState({ search: debouncedSearch });
+    }
+  }, [debouncedSearch]);
 
   // Example fallback if no data (for dev)
   const datasets = data?.results || [];
@@ -183,6 +233,50 @@ export default function CivicDataSpace() {
           />
           {/* Main Content */}
           <div className="flex-1">
+            {/* Active Filters Indicator */}
+            {hasActiveFilters && (
+              <div className="mb-4 p-2 bg-blue-50 border border-blue-100 rounded-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium text-blue-800">
+                      Active Filters:
+                    </span>
+                    {search && (
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        Search: "{search}"
+                      </span>
+                    )}
+                    {Object.entries(filters).map(
+                      ([key, values]) =>
+                        values.length > 0 && (
+                          <span
+                            key={key}
+                            className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"
+                          >
+                            {key}: {values.join(", ")}
+                          </span>
+                        )
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleShareClick}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    {copied ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Share2 className="w-4 h-4" />
+                    )}
+                    <span className="ml-1 text-xs">
+                      {copied ? "Copied!" : "Share"}
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Search and Controls */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex-1 max-w-md">
@@ -201,14 +295,14 @@ export default function CivicDataSpace() {
                   <Button
                     variant={viewMode === "grid" ? "default" : "ghost"}
                     size="sm"
-                    onClick={() => setViewMode("grid")}
+                    onClick={() => handleViewModeChange("grid")}
                   >
                     <Grid3X3 className="w-4 h-4" />
                   </Button>
                   <Button
                     variant={viewMode === "list" ? "default" : "ghost"}
                     size="sm"
-                    onClick={() => setViewMode("list")}
+                    onClick={() => handleViewModeChange("list")}
                   >
                     <List className="w-4 h-4" />
                   </Button>
