@@ -111,8 +111,12 @@ export default function DatasetList({ dataset }: DatasetListProps) {
                   src={dataset.organization.logo}
                   alt={dataset.organization.name}
                   className="w-4 h-4 rounded-full"
-                  // width={16}
-                  // height={16}
+                  width={12}
+                  height={12}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display =
+                      "none";
+                  }}
                 />
               )}
               <span className="text-sm font-semibold">

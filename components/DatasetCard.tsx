@@ -89,8 +89,12 @@ export default function DatasetCard({ dataset, viewMode }: DatasetCardProps) {
                     src={dataset.organization.logo}
                     alt={dataset.organization.name}
                     className="w-4 h-4 rounded-full"
-                    // width={12}
-                    // height={12}
+                    width={12}
+                    height={12}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display =
+                        "none";
+                    }}
                   />
                 )}
                 <span className="text-sm">{dataset.organization.name}</span>
@@ -218,6 +222,9 @@ export default function DatasetCard({ dataset, viewMode }: DatasetCardProps) {
                 className="w-4 h-4 rounded-full"
                 width={12}
                 height={12}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
               />
             )}
             <span className="text-xs text-gray-600">

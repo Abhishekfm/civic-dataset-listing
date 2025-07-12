@@ -150,8 +150,11 @@ export default function DatasetGrid({ dataset }: DatasetGridProps) {
                 src={dataset.organization.logo}
                 alt={dataset.organization.name}
                 className="w-3 h-3 rounded-full"
-                // width={12}
-                // height={12}
+                width={12}
+                height={12}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
               />
             )}
             <span className="text-xs text-gray-600 font-semibold">
