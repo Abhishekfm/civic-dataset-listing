@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import {
   Search,
   Grid3X3,
   List,
-  ChevronDown,
   ArrowUpDown,
   Share2,
-  Copy,
   Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function CivicDataSpace() {
+function CivicDataSpaceContent() {
   const { updateURL, getCurrentState } = useURLFilters();
 
   // Get initial state from URL
@@ -80,7 +78,7 @@ export default function CivicDataSpace() {
     setLoading(true);
     setError(null);
     try {
-      const params: any = {
+      const params: Record<string, string | number> = {
         query: debouncedSearch,
         sectors: filters.sectors.join(","),
         timePeriods: filters.timePeriods.join(","),
@@ -100,9 +98,10 @@ export default function CivicDataSpace() {
       };
       const res = await fetchDatasets(params);
       setData(res);
-    } catch (err: any) {
-      setLoading(false);
-      setError(err.message || "Error fetching datasets");
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Error fetching datasets";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -199,7 +198,7 @@ export default function CivicDataSpace() {
     if (debouncedSearch !== urlState.search) {
       updateURLState({ search: debouncedSearch });
     }
-  }, [debouncedSearch]);
+  }, [debouncedSearch, updateURLState, urlState.search]);
 
   // Example fallback if no data (for dev)
   const datasets = data?.results || [];
@@ -243,7 +242,7 @@ export default function CivicDataSpace() {
                     </span>
                     {search && (
                       <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                        Search: "{search}"
+                        Search: {search}
                       </span>
                     )}
                     {Object.entries(filters).map(
@@ -430,5 +429,24 @@ export default function CivicDataSpace() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function CivicDataSpace() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-blue-600 font-semibold mb-2">Loading...</div>
+            <div className="text-gray-500 text-sm">
+              Preparing your dataset listing
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <CivicDataSpaceContent />
+    </Suspense>
   );
 }

@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Dataset } from "@/types/dataset";
+import Image from "next/image";
 
 interface DatasetListProps {
   dataset: Dataset;
@@ -106,14 +107,12 @@ export default function DatasetList({ dataset }: DatasetListProps) {
             </span>
             <div className="flex items-center space-x-1">
               {dataset.organization.logo && (
-                <img
+                <Image
                   src={dataset.organization.logo}
                   alt={dataset.organization.name}
                   className="w-4 h-4 rounded-full"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display =
-                      "none";
-                  }}
+                  // width={16}
+                  // height={16}
                 />
               )}
               <span className="text-sm font-semibold">

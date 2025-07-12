@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Dataset } from "@/types/dataset";
+import Image from "next/image";
 
 interface DatasetGridProps {
   dataset: Dataset;
@@ -145,13 +146,12 @@ export default function DatasetGrid({ dataset }: DatasetGridProps) {
           </span>
           <div className="flex items-center space-x-1">
             {dataset.organization.logo && (
-              <img
+              <Image
                 src={dataset.organization.logo}
                 alt={dataset.organization.name}
                 className="w-3 h-3 rounded-full"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = "none";
-                }}
+                // width={12}
+                // height={12}
               />
             )}
             <span className="text-xs text-gray-600 font-semibold">

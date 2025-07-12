@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Dataset } from "@/types/dataset";
+import Image from "next/image";
 
 interface DatasetCardProps {
   dataset: Dataset;
@@ -84,14 +85,12 @@ export default function DatasetCard({ dataset, viewMode }: DatasetCardProps) {
               <span className="text-sm text-gray-500">Published by:</span>
               <div className="flex items-center space-x-1">
                 {dataset.organization.logo && (
-                  <img
+                  <Image
                     src={dataset.organization.logo}
                     alt={dataset.organization.name}
                     className="w-4 h-4 rounded-full"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display =
-                        "none";
-                    }}
+                    // width={12}
+                    // height={12}
                   />
                 )}
                 <span className="text-sm">{dataset.organization.name}</span>
@@ -213,13 +212,12 @@ export default function DatasetCard({ dataset, viewMode }: DatasetCardProps) {
         <div className="flex items-center space-x-2 pt-2 border-t">
           <div className="flex items-center space-x-1">
             {dataset.organization.logo && (
-              <img
+              <Image
                 src={dataset.organization.logo}
                 alt={dataset.organization.name}
-                className="w-3 h-3 rounded-full"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = "none";
-                }}
+                className="w-4 h-4 rounded-full"
+                width={12}
+                height={12}
               />
             )}
             <span className="text-xs text-gray-600">
