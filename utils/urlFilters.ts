@@ -1,4 +1,5 @@
 import { useRouter, useSearchParams } from "next/navigation";
+import { Sort, Order } from "@/hooks/useFilters";
 
 export interface Filters {
   sectors: string[];
@@ -12,10 +13,16 @@ export interface Filters {
 export interface URLState {
   search: string;
   filters: Filters;
-  sort: string;
+  sortField: string;
+  sortOrder: string;
   page: number;
   size: number;
-  viewMode: "list" | "grid";
+  viewMode: ViewMode;
+}
+
+export enum ViewMode {
+  List = "list",
+  Grid = "grid",
 }
 
 // Convert filters object to URL search params
@@ -50,8 +57,11 @@ export function filtersToSearchParams(state: URLState): URLSearchParams {
     params.set("licenses", state.filters.licenses.join(","));
   }
 
-  if (state.sort !== "latest") {
-    params.set("sort", state.sort);
+  if (state.sortField !== Sort.Recent) {
+    params.set("sortField", state.sortField);
+  }
+  if (state.sortOrder !== Order.Desc) {
+    params.set("sortOrder", state.sortOrder);
   }
 
   if (state.page > 1) {
@@ -102,10 +112,11 @@ export function searchParamsToFilters(searchParams: URLSearchParams): URLState {
         searchParams.get("licenses")?.split(",").filter(Boolean) ||
         defaultFilters.licenses,
     },
-    sort: searchParams.get("sort") || "latest",
+    sortField: searchParams.get("sortField") || Sort.Recent,
+    sortOrder: searchParams.get("sortOrder") || Order.Desc,
     page: parseInt(searchParams.get("page") || "1"),
     size: parseInt(searchParams.get("size") || "5"),
-    viewMode: (searchParams.get("view") as "list" | "grid") || "list",
+    viewMode: (searchParams.get("view") as ViewMode) || ViewMode.List,
   };
 }
 

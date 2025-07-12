@@ -8,8 +8,16 @@ export interface Filters {
   formats: string;
   page: number;
   size: number;
-  sort: "recent" | "alphabetical";
-  order: "asc" | "desc";
+  sort: Sort;
+  order: Order;
+}
+export enum Sort {
+  Recent = "recent",
+  Alphabetical = "alphabetical",
+}
+export enum Order {
+  Asc = "asc",
+  Desc = "desc",
 }
 
 const defaultFilters: Filters = {
@@ -20,8 +28,8 @@ const defaultFilters: Filters = {
   formats: "",
   page: 1,
   size: 10,
-  sort: "recent",
-  order: "desc",
+  sort: Sort.Recent,
+  order: Order.Desc,
 };
 
 export function useFilters(initial?: Partial<Filters>) {

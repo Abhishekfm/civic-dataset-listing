@@ -1,3 +1,4 @@
+import { Order, Sort } from "@/hooks/useFilters";
 import { DatasetResponse } from "../types/dataset";
 
 const BASE_URL = "https://api.datakeep.civicdays.in/api/search/dataset/";
@@ -10,8 +11,8 @@ export interface FetchDatasetsParams {
   formats?: string;
   page?: number;
   size?: number;
-  sort?: "recent" | "alphabetical";
-  order?: "asc" | "desc";
+  sort?: Sort;
+  order?: Order;
 }
 
 export async function fetchDatasets(

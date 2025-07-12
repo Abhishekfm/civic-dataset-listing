@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import {
   Search,
   Grid3X3,
@@ -12,7 +12,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fetchDatasets } from "@/utils/api";
-import { useURLFilters, type Filters, type URLState } from "@/utils/urlFilters";
+import {
+  useURLFilters,
+  ViewMode,
+  type Filters,
+  type URLState,
+} from "@/utils/urlFilters";
+// import type { ViewMode } from "@/types/viewMode";
 import type { DatasetResponse } from "@/types/dataset";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -26,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Order, Sort } from "@/hooks/useFilters";
 
 function CivicDataSpaceContent() {
   const { updateURL, getCurrentState } = useURLFilters();
@@ -34,15 +41,19 @@ function CivicDataSpaceContent() {
   const urlState = getCurrentState();
 
   // UI state
-  const [viewMode, setViewMode] = useState<"list" | "grid">(urlState.viewMode);
-  const selectRef = useRef<HTMLButtonElement>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>(urlState.viewMode);
   const [copied, setCopied] = useState(false);
 
   // Filter/search/sort state
   const [search, setSearch] = useState(urlState.search);
   const [debouncedSearch, setDebouncedSearch] = useState(urlState.search);
   const [filters, setFilters] = useState<Filters>(urlState.filters);
-  const [sort, setSort] = useState(urlState.sort);
+  const [sortField, setSortField] = useState<Sort>(
+    (urlState.sortField as Sort) || Sort.Recent
+  );
+  const [sortOrder, setSortOrder] = useState<Order>(
+    (urlState.sortOrder as Order) || Order.Desc
+  );
   const [page, setPage] = useState(urlState.page);
   const [size, setSize] = useState(urlState.size);
 
@@ -61,7 +72,8 @@ function CivicDataSpaceContent() {
       const currentState = {
         search: debouncedSearch,
         filters,
-        sort,
+        sortField,
+        sortOrder,
         page,
         size,
         viewMode,
@@ -70,7 +82,16 @@ function CivicDataSpaceContent() {
       const updatedState = { ...currentState, ...newState };
       updateURL(updatedState);
     },
-    [debouncedSearch, filters, sort, page, size, viewMode, updateURL]
+    [
+      debouncedSearch,
+      filters,
+      sortField,
+      sortOrder,
+      page,
+      size,
+      viewMode,
+      updateURL,
+    ]
   );
 
   // Fetch datasets
@@ -88,13 +109,8 @@ function CivicDataSpaceContent() {
         licenses: filters.licenses.join(","),
         page,
         size,
-        sort:
-          sort === "latest"
-            ? "recent"
-            : sort === "oldest"
-            ? "recent"
-            : "alphabetical",
-        order: sort === "oldest" ? "asc" : "desc",
+        sort: sortField,
+        order: sortOrder,
       };
       const res = await fetchDatasets(params);
       setData(res);
@@ -105,7 +121,7 @@ function CivicDataSpaceContent() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, filters, page, size, sort]);
+  }, [debouncedSearch, filters, page, size, sortField, sortOrder]);
 
   useEffect(() => {
     getDatasets();
@@ -126,10 +142,6 @@ function CivicDataSpaceContent() {
   }, [debouncedSearch]);
 
   // Handlers
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-  };
-
   const handleFilterChange = (newFilters: Filters) => {
     setFilters(newFilters);
     setPage(1);
@@ -152,11 +164,24 @@ function CivicDataSpaceContent() {
     updateURLState({ filters: resetFilters, page: 1 });
   };
 
-  const handleSortChange = (value: string) => {
-    setSort(value);
+  const handleSortFieldChange = (value: string) => {
+    const newSortField = value as Sort;
+    setSortField(newSortField);
     setPage(1);
-    // Update URL immediately when sort changes
-    updateURLState({ sort: value, page: 1 });
+    // Update URL immediately when sort field changes
+    updateURLState({ sortField: newSortField, page: 1 });
+  };
+
+  const handleSortOrderToggle = () => {
+    const newSortOrder = sortOrder === Order.Desc ? Order.Asc : Order.Desc;
+    setSortOrder(newSortOrder);
+    setPage(1);
+    // Update URL immediately when sort order changes
+    updateURLState({ sortOrder: newSortOrder, page: 1 });
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -173,14 +198,10 @@ function CivicDataSpaceContent() {
     updateURLState({ size: newSize, page: 1 });
   };
 
-  const handleViewModeChange = (mode: "list" | "grid") => {
+  const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
     // Update URL immediately when view mode changes
     updateURLState({ viewMode: mode });
-  };
-
-  const handleArrowClick = () => {
-    selectRef.current?.click();
   };
 
   const handleShareClick = async () => {
@@ -234,7 +255,7 @@ function CivicDataSpaceContent() {
           <div className="flex-1">
             {/* Active Filters Indicator */}
             {hasActiveFilters && (
-              <div className="mb-4 p-2 bg-blue-50 border border-blue-100 rounded-sm">
+              <div className="mb-4 p-2 bg-gray-100 border border-gray-200 rounded-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-medium text-blue-800">
@@ -278,7 +299,7 @@ function CivicDataSpaceContent() {
 
             {/* Search and Controls */}
             <div className="flex items-center justify-between mb-6">
-              <div className="flex-1 max-w-md">
+              <div className="flex-1 max-w-xl">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
@@ -294,71 +315,111 @@ function CivicDataSpaceContent() {
                   <Button
                     variant={viewMode === "grid" ? "default" : "ghost"}
                     size="sm"
-                    onClick={() => handleViewModeChange("grid")}
+                    onClick={() => handleViewModeChange(ViewMode.Grid)}
                   >
                     <Grid3X3 className="w-4 h-4" />
                   </Button>
                   <Button
                     variant={viewMode === "list" ? "default" : "ghost"}
                     size="sm"
-                    onClick={() => handleViewModeChange("list")}
+                    onClick={() => handleViewModeChange(ViewMode.List)}
                   >
                     <List className="w-4 h-4" />
                   </Button>
                 </div>
-                <div className="flex items-center space-x-2 ">
+                <div className="flex items-center space-x-2">
+                  {/* Sort Order Toggle */}
                   <ArrowUpDown
                     className="cursor-pointer hover:text-blue-600 transition-colors w-4 h-4"
-                    onClick={handleArrowClick}
+                    onClick={handleSortOrderToggle}
                   />
+                  {/* Sort Field Dropdown */}
                   <Select
-                    value={sort}
-                    onValueChange={handleSortChange}
-                    defaultValue="latest"
+                    value={sortField}
+                    onValueChange={handleSortFieldChange}
+                    defaultValue={Sort.Recent}
                   >
-                    <SelectTrigger ref={selectRef} className="w-40">
+                    <SelectTrigger className="w-40">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="latest">Latest Updated</SelectItem>
-                      <SelectItem value="oldest">Oldest Updated</SelectItem>
-                      <SelectItem value="name">Name A-Z</SelectItem>
+                      <SelectItem value={Sort.Recent}>
+                        Latest Updated
+                      </SelectItem>
+                      <SelectItem value={Sort.Alphabetical}>
+                        Name A-Z
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
             </div>
 
-            {/* Loading/Error/Empty States */}
+            {/* Early return for loading state */}
             {loading && (
-              <div className="text-center py-8 text-blue-600 font-semibold">
-                Loading datasets...
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                  <svg
+                    aria-hidden="true"
+                    className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600 mx-auto mb-4"
+                    viewBox="0 0 100 101"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                      fill="currentFill"
+                    />
+                  </svg>
+                  <div className="text-blue-600 font-semibold">
+                    Loading datasets...
+                  </div>
+                  <span className="sr-only">Loading...</span>
+                </div>
               </div>
             )}
+
+            {/* Error state */}
             {error && (
               <div className="text-center py-8 text-red-600 font-semibold">
                 {error}
               </div>
             )}
-            {!loading && datasets.length === 0 && (
+
+            {/* Empty state */}
+            {!loading && !error && datasets.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 No datasets found.
               </div>
             )}
 
-            {/* Dataset List/Grid */}
-            {viewMode === "list" ? (
-              <div className="space-y-4">
-                {datasets.map((dataset, index) => (
-                  <DatasetList key={dataset.id || index} dataset={dataset} />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {datasets.map((dataset, index) => (
-                  <DatasetGrid key={dataset.id || index} dataset={dataset} />
-                ))}
-              </div>
+            {/* Dataset List/Grid - only show when not loading and no error */}
+            {!loading && !error && (
+              <>
+                {viewMode === "list" ? (
+                  <div className="space-y-4">
+                    {datasets.map((dataset, index) => (
+                      <DatasetList
+                        key={dataset.id || index}
+                        dataset={dataset}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {datasets.map((dataset, index) => (
+                      <DatasetGrid
+                        key={dataset.id || index}
+                        dataset={dataset}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
 
             {/* Pagination */}
