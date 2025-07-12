@@ -34,7 +34,7 @@ export default function DatasetList({ dataset }: DatasetListProps) {
     : dataset.description.slice(0, 200) + (shouldShowMore ? "..." : "");
 
   return (
-    <div className="bg-white border rounded-lg p-6">
+    <div className="bg-white border rounded-lg p-4 sm:p-6">
       <div className="flex items-start justify-between mb-4">
         <h3 className="text-lg font-semibold text-blue-600 hover:underline cursor-pointer">
           {dataset.title}
@@ -55,8 +55,8 @@ export default function DatasetList({ dataset }: DatasetListProps) {
         </p>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-6 text-sm text-gray-500">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-500">
           <div className="flex items-center space-x-1">
             <Calendar className="w-4 h-4" />
             <span>
@@ -85,11 +85,11 @@ export default function DatasetList({ dataset }: DatasetListProps) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-4 pt-4 border-t">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mt-4 pt-4 border-t gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-500">Sectors:</span>
-            <div className="flex space-x-1">
+            <div className="flex flex-wrap gap-1">
               {dataset.sectors.map((sector, idx) => (
                 <Badge
                   key={idx}
@@ -125,10 +125,10 @@ export default function DatasetList({ dataset }: DatasetListProps) {
             </div>
           </div>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-500">Tags:</span>
-            <div className="flex space-x-1">
+            <div className="flex flex-wrap gap-1">
               {dataset.tags.map((tag, tagIndex) => (
                 <Badge
                   key={tagIndex}
