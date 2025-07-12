@@ -1,103 +1,340 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Search, Grid3X3, List, ChevronDown, ArrowUpDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { fetchDatasets } from "@/utils/api";
+import type { DatasetResponse } from "@/types/dataset";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import FilterSidebar from "@/components/FilterSidebar";
+import DatasetList from "@/components/DatasetList";
+import DatasetGrid from "@/components/DatasetGrid";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+export default function CivicDataSpace() {
+  // UI state
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const selectRef = useRef<HTMLButtonElement>(null);
+
+  // Filter/search/sort state
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  interface Filters {
+    sectors: string[];
+    timePeriods: string[];
+    dataTypes: string[];
+    tags: string[];
+    geography: string[];
+    licenses: string[];
+  }
+  const [filters, setFilters] = useState<Filters>({
+    sectors: [],
+    timePeriods: [],
+    dataTypes: [],
+    tags: [],
+    geography: [],
+    licenses: [],
+  });
+  const [sort, setSort] = useState("latest");
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(5);
+
+  // Data state
+  const [data, setData] = useState<DatasetResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch datasets
+  const getDatasets = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params: any = {
+        query: debouncedSearch,
+        sectors: filters.sectors.join(","),
+        timePeriods: filters.timePeriods.join(","),
+        formats: filters.dataTypes.join(","),
+        tags: filters.tags.join(","),
+        geography: filters.geography.join(","),
+        licenses: filters.licenses.join(","),
+        page,
+        size,
+        sort:
+          sort === "latest"
+            ? "recent"
+            : sort === "oldest"
+            ? "recent"
+            : "alphabetical",
+        order: sort === "oldest" ? "asc" : "desc",
+      };
+      const res = await fetchDatasets(params);
+      setData(res);
+    } catch (err: any) {
+      setError(err.message || "Error fetching datasets");
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearch, filters, page, size, sort]);
+
+  useEffect(() => {
+    getDatasets();
+  }, [getDatasets]);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  // Handlers
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+
+  const handleFilterChange = (newFilters: Filters) => {
+    setFilters(newFilters);
+    setPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      sectors: [],
+      timePeriods: [],
+      dataTypes: [],
+      tags: [],
+      geography: [],
+      licenses: [],
+    });
+    setPage(1);
+  };
+
+  const handleSortChange = (value: string) => {
+    setSort(value);
+    setPage(1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleSizeChange = (value: string) => {
+    setSize(Number(value));
+    setPage(1);
+  };
+
+  const handleArrowClick = () => {
+    selectRef.current?.click();
+  };
+
+  // Example fallback if no data (for dev)
+  const datasets = data?.results || [];
+  const total = data?.total || 0;
+  const totalPages = Math.ceil(total / size) || 1;
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-white">
+      <Header />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Breadcrumb */}
+      <div className="bg-orange-100 py-2">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center space-x-2 text-sm">
+            <a href="#" className="text-blue-600 hover:underline">
+              Home
+            </a>
+            <span>›</span>
+            <span className="font-medium">All Data</span>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+      </div>
+
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex gap-6">
+          <FilterSidebar
+            data={data}
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onReset={handleResetFilters}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          {/* Main Content */}
+          <div className="flex-1">
+            {/* Search and Controls */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex-1 max-w-md">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Start typing to search for any Dataset"
+                    className="pl-10 bg-gray-50 border-gray-200"
+                    value={search}
+                    onChange={handleSearchChange}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant={viewMode === "grid" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("grid")}
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center space-x-2 ">
+                  <ArrowUpDown
+                    className="cursor-pointer hover:text-blue-600 transition-colors w-4 h-4"
+                    onClick={handleArrowClick}
+                  />
+                  <Select
+                    value={sort}
+                    onValueChange={handleSortChange}
+                    defaultValue="latest"
+                  >
+                    <SelectTrigger ref={selectRef} className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="latest">Latest Updated</SelectItem>
+                      <SelectItem value="oldest">Oldest Updated</SelectItem>
+                      <SelectItem value="name">Name A-Z</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Loading/Error/Empty States */}
+            {loading && (
+              <div className="text-center py-8 text-blue-600 font-semibold">
+                Loading datasets...
+              </div>
+            )}
+            {error && (
+              <div className="text-center py-8 text-red-600 font-semibold">
+                {error}
+              </div>
+            )}
+            {!loading && datasets.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No datasets found.
+              </div>
+            )}
+
+            {/* Dataset List/Grid */}
+            {viewMode === "list" ? (
+              <div className="space-y-4">
+                {datasets.map((dataset, index) => (
+                  <DatasetList key={dataset.id || index} dataset={dataset} />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {datasets.map((dataset, index) => (
+                  <DatasetGrid key={dataset.id || index} dataset={dataset} />
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between mt-8">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-500">Items per page</span>
+                <Select
+                  value={String(size)}
+                  onValueChange={handleSizeChange}
+                  defaultValue="5"
+                >
+                  <SelectTrigger className="w-16">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">05</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-500">
+                  Page {page.toString().padStart(2, "0")} of{" "}
+                  {totalPages.toString().padStart(2, "0")}
+                </span>
+                <div className="flex items-center space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handlePageChange(1)}
+                    disabled={page === 1}
+                  >
+                    {"<<"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handlePageChange(Math.max(1, page - 1))}
+                    disabled={page === 1}
+                  >
+                    {"<"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      handlePageChange(Math.min(totalPages, page + 1))
+                    }
+                    disabled={page === totalPages}
+                  >
+                    {">"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handlePageChange(totalPages)}
+                    disabled={page === totalPages}
+                  >
+                    {">>"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
     </div>
   );
 }
