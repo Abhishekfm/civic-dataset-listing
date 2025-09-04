@@ -106,10 +106,10 @@ export default function DatasetList({ dataset }: DatasetListProps) {
               Published by:
             </span>
             <div className="flex items-center space-x-1">
-              {dataset.organization.logo && (
+              {dataset.organization?.logo && (
                 <Image
-                  src={dataset.organization.logo}
-                  alt={dataset.organization.name}
+                  src={dataset.organization?.logo}
+                  alt={dataset.organization?.name}
                   className="w-4 h-4 rounded-full"
                   width={12}
                   height={12}
@@ -120,7 +120,7 @@ export default function DatasetList({ dataset }: DatasetListProps) {
                 />
               )}
               <span className="text-sm font-semibold">
-                {dataset.organization.name}
+                {dataset.organization?.name}
               </span>
             </div>
           </div>

@@ -84,9 +84,9 @@ export default function DatasetCard({ dataset, viewMode }: DatasetCardProps) {
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">Published by:</span>
               <div className="flex items-center space-x-1">
-                {dataset.organization.logo && (
+                {dataset.organization?.logo && (
                   <Image
-                    src={dataset.organization.logo}
+                    src={dataset.organization?.logo}
                     alt={dataset.organization.name}
                     className="w-4 h-4 rounded-full"
                     width={12}
@@ -215,7 +215,7 @@ export default function DatasetCard({ dataset, viewMode }: DatasetCardProps) {
 
         <div className="flex items-center space-x-2 pt-2 border-t">
           <div className="flex items-center space-x-1">
-            {dataset.organization.logo && (
+            {dataset.organization?.logo && (
               <Image
                 src={dataset.organization.logo}
                 alt={dataset.organization.name}

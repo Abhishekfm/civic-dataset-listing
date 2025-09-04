@@ -145,10 +145,10 @@ export default function DatasetGrid({ dataset }: DatasetGridProps) {
             Published by:
           </span>
           <div className="flex items-center space-x-1">
-            {dataset.organization.logo && (
+            {dataset.organization?.logo && (
               <Image
-                src={dataset.organization.logo}
-                alt={dataset.organization.name}
+                src={dataset.organization?.logo}
+                alt={dataset.organization?.name}
                 className="w-3 h-3 rounded-full"
                 width={12}
                 height={12}
@@ -158,7 +158,7 @@ export default function DatasetGrid({ dataset }: DatasetGridProps) {
               />
             )}
             <span className="text-xs text-gray-600 font-semibold">
-              {dataset.organization.name}
+              {dataset.organization?.name}
             </span>
           </div>
         </div>
